@@ -1,0 +1,151 @@
+---
+title: "Food Safety Data Analysis"
+output:
+  html_document: default
+---
+
+This markdown file contains some methods to explore the SF open data set
+
+```{r}
+#install.packages("readr")
+library(readr)
+raw_table = read_csv("../data_source/Restaurant_Scores_-_LIVES_Standard.csv")
+head(raw_table,6)
+```
+
+```{r}
+cat("number of records = ",nrow(raw_table), "\n")
+cat("all fields name: \n")
+colnames(raw_table)
+lapply(raw_table, class)
+```
+
+```{r}
+summary(raw_table)
+```
+
+
+```{r}
+#install.packages("dplyr")
+library(dplyr)
+#browseVignettes(package = "dplyr")
+#install.packages("anytime")
+library(anytime)
+
+dim(raw_table)# 53729    17
+str(raw_table)
+
+# Notice in the raw table:
+all(raw_table$business_city == "San Francisco") # TRUE
+all(raw_table$business_state == "CA") #TRUE
+# business_location = c(business_latitude, business_longitude)
+#d1 <- raw_table[,c(-4,-5,-9)]
+#dim(d1)
+#Similarly:
+## inspection_id = business_id_inspection_date
+#d2 <- d1[, -8]
+
+# 
+new_table <- raw_table
+new_table$inspection_date = anydate(new_table$inspection_date)
+## 14 types of inspection_type
+unique(new_table$inspection_type)
+## violation_id = business_id + inspection_date + violation code
+new_table$violation_code = sapply(strsplit(new_table$violation_id,"\\_"),"[",3)
+unique(new_table$violation_code)
+## 68 unique violation code, and NA ########
+length(unique(new_table$violation_code))
+## each violation code corresponds to a unique violaton discription
+length(unique(new_table$violation_description))
+
+# 3 risk categories "Moderate Risk", "Low Risk", "High Risk", and NA    
+length(unique(new_table$risk_category))
+unique(new_table$risk_category)
+```
+
+
+
+```{r}
+# based on above observation, we can create a new data frame d1:
+d1  = new_table[,c("business_id", 
+                   "business_postal_code", 
+                   "business_latitude", 
+                   "business_longitude",
+                   "inspection_date",
+                   "inspection_score",
+                   "inspection_type",
+                   "violation_code", 
+                   "violation_description",
+                   "risk_category")]
+
+range(d1$inspection_date) # 3-year "2014-01-09" "2017-01-09"
+# Leave the latest year as test set:
+d1.train = d1[d1$inspection_date <= "2016-01-09",]
+range(d1.train$inspection_date)
+d1.test = d1[d1$inspection_date > "2016-01-09",]
+range(d1.test$inspection_date)
+
+# Some SQL-like query:
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

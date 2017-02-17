@@ -1,0 +1,150 @@
+---
+title: "Create Package for Stats290 Final Project"
+output:
+  html_document: default
+---
+
+Run this Markdown file to auto generate the R package "Stat290Pkg", which will create a new '/Stat290Pkg' directory and a Stat290Pkg_1.0.tar.gz
+
+
+```{r}
+installIfNeeded <- function(packages, ...) {
+    toInstall <- setdiff(packages, installed.packages()[, 1])
+    if (length(toInstall) > 0) {
+        install.packages(toInstall, ...)
+    }
+}
+installIfNeeded(c("devtools", "readr"))
+```
+
+
+## Prepare the Package##
+
+This will overwrite the existing ones in current directory
+
+```{r}
+library(devtools)
+pkgName  <- "Stat290Pkg"
+
+## Remove any existing package named =testpack
+unlink(x = "Stat290Pkg", recursive = TRUE, force = TRUE)
+
+devtools::create(path = pkgName, rstudio = FALSE)
+
+## Edit the DESCRIPTION file
+library(readr)
+descriptionFilePath <- paste(pkgName, "DESCRIPTION", sep = .Platform$file.sep)
+description <- readr::read_lines(descriptionFilePath)
+description[2] <- "Title: The Stat290Pkg Package"
+description[3] <- "Version: 1.0"
+description[5] <- paste("Description: ...")
+description[7] <- "License: GPL (>= 2)"
+
+readr::write_lines(x = description, path = descriptionFilePath)
+
+##Indicate imports
+devtools::use_package("dplyr", type = "Imports", pkg = pkgName)
+devtools::use_package("readr", type = "Imports", pkg = pkgName)
+#devtools::use_package("ggplot2", type = "Imports", pkg = pkgName)
+#devtools::use_package("utils", type = "Imports", pkg = pkgName)
+#devtools::use_package("scales", type = "Imports", pkg = pkgName)
+#devtools::use_package("magrittr", type = "Imports", pkg = pkgName)
+#devtools::use_package("tibble", type = "Imports", pkg = pkgName)
+
+
+
+##
+devtools::use_rcpp(pkg = pkgName)
+
+## Save the Data
+library(readr)
+SFOpenData = read_csv("../data_source/Restaurant_Scores_-_LIVES_Standard.csv")
+devtools::use_data(SFOpenData, pkg = pkgName)
+
+
+## Document the funtion
+
+## Write the R code back in to package:
+file.copy(from = "../src/main.R",
+          to = paste(pkgName, "R", "main.R", sep = .Platform$file.sep),
+          overwrite = TRUE)
+
+## Check rda data, document in bitly.R
+file.info("SFOpenData")
+
+## Document the package in Stat290Pkg.R
+## Write this documented file back to /R/
+file.copy(from = "Stat290Pkg.R",
+          to = paste(pkgName, "R", "Stat290Pkg.R", sep = .Platform$file.sep),
+          overwrite = TRUE)
+
+## Document the data in SFOpenData.R
+## Write this documented file back to /R/
+file.copy(from = "SFOpenData.R",
+          to = paste(pkgName, "R", "SFOpenData.R", sep = .Platform$file.sep),
+          overwrite = TRUE)
+
+
+## Generate the documentation under the /man directory
+devtools::document(pkg = pkgName)
+
+```
+
+
+## Build the package##
+
+```{bash}
+# cd current dir
+R CMD build Stat290Pkg
+```
+
+This produces the source package tar.gz.
+
+
+## Check the package##
+
+```{bash}
+R CMD check Stat290Pkg_1.0.tar.gz
+```
+
+
+
+## Install the Package##
+
+
+```{bash}
+R CMD INSTALL Stat290Pkg_1.0.tar.gz
+```
+
+Installation worked, so let us get some info.
+
+```{r}
+packageDescription("Stat290Pkg")
+```
+
+Let us use it.
+
+```{r}
+install.packages("Stat290Pkg")
+library(Stat290Pkg)
+library(help = Stat290Pkg)
+```
+
+We can look up help.
+
+```{r}
+help(Stat290Pkg)
+#help(function)
+```
+
+We can run the examples.
+
+```{r}
+#example(function)
+```
+
+
+## Session Info
+```{r}
+sessionInfo()
+```
