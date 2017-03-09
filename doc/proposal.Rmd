@@ -1,0 +1,82 @@
+---
+title: "Proposal"
+output:
+  html_document: default
+---
+
+
+1. What is your package trying to achieve?  Who is it aimed at?
+
+```q1
+
+The goal of this package is to help prevent food poisoning in San Francisco using available public data and an anlaytic approach to predict which food establishments are the most likely to have critical food safety violations.
+
+As background, last year San Francisco conducted nearly 10,000 inspections on ~5,000 food businesses, with 48% of the inspections resulting in a violation.  The number of inspections grew in 2016 by 44% (from ~7000 in 2015), whereas the number of violations identified grew by 24%.
+Additionally, there are ~7,500 food-related businesses registered in San Francisco, and ~6,000 of them have been inspected over the past several years.
+(source: SF Open Data)
+
+Our package aims to:
+
+ - Harmonize data inputs across disparate data sources and apply appropriate transformations for model preparation.
+ - Summarize the SF food business landscape and related food inspection results, helping public officials and restaruant owners understand key drivers in food health issues (e.g. # of retail food establishments, # of inspections, types of violations).
+ - Predict high-risk food establishments based on historical data inputs (using a classification model).
+ - Communicate to interested parties the model results, helping them with future decision making and prioritization.
+
+For example, metrics that could be made available to interested parties include the number and distribution of food inspections by inspection date, type, risk (predicted and observed), violations, by location (postal code), and scores.
+
+Additionally, the package will allow users to:
+
+1.  Querying.  Load the datasets required for analysis, such as the Restaurant Scores from https://data.sfgov.org. Once loaded, users will also be able to save/and reload the data as a table, sort, extract subsets based on certain criteria, etc.
+
+2.  Visualization.  The package will provide visualization for the response-predictors relationship between scoring predictions and other variables (e.g. # of inspections completed vs. % of critical violations found).  This will be done using R packages for plotting; and if possible, with an export capability to integrate with other software packages such as Tableau.
+
+3.  Analysis.  The package uses data to predict scores of restaurants. The source data will be divided into a training data set for training and tuning the model, and a leave-out test data set to conduce final evaluation. The model will be built only using the training data set, in addition, a 10-fold cross-validation will be performed to train and test the model.
+The final evaluation compares the scores of the leave-out data set and the scores predicted by the model on this data set.
+
+
+```
+
+2. Briefly describe the background if that's not obvious.  What field
+   or area of interest is it related to?  (Just briefly, in a paragraph
+   or two, maximum.) References, including web references, are welcome
+   where available.
+
+```q2
+Food safety inspection is conducted by the Health Department of San Francisco on thousands of restaurants across the city. After inspecting the facilities, a score has been calculated for each restaurant by the health inspector based on the violations observed at the food establishment.  However, classification and predictive estimates are not done today to determine the establishments at higher risk of violations, and the key factors leading to food safety issues.
+Additionally, the efficacy of inspections for all restaurants across the city is largely limited by funds and the number of health inspectors. This project is aimed to build a prediction system that predicts the scores of restaurants based on previous scores and various attributes.  The model will also show which attributes have the greatest impact on a low score/severe violation. The results shed light on where violations are most likely to happen, helping with resource prioritization and prevention of illnesses.
+
+Related information can be found on website: https://data.sfgov.org/Health-and-Social-Services/Restaurant-Scores-LIVES-Standard/pyih-qa8i/about
+
+
+```
+
+3. Provide one or two use cases; that is, in a sentence or so say how
+   you see someone using the package.
+
+```q3
+1. Public officials and restaurant inspectors can use the package to predict restaurants that are most likely to have violations, and prioritize their workload.
+
+2, Public health researchers can use the package to discover which factors have the most impact on food safety.
+
+3. Citizens and interested parties can use the reporting and visualization functions of this package to view the restaurant scoring distributions.
+
+```
+
+4. If you can, list the main functions or other software you plan on
+   including.  No need to implement anything now, but you should have
+   an idea.
+
+```q4
+
+The R package will provide the following functions:
+ - Reading and writing data, and structuring it into a harmonized analytic construct for analysis.
+ - Creating graphs and visualizations
+ - Provide functions for score prediction and inference analysis.
+ - Integrate data with a Shiny application
+ - Executing parameterize queries against the datasets for interactivity and downloading.
+
+```
+
+
+
+
