@@ -11,7 +11,7 @@ if (dir != workdir){
 source("src/generate_Rscore_data.R")
 source("src/download_weather_history_all.R")
 source("src/generate_weather_data.R")
-source("src/weather_3day_avg.R")
+source("src/weather_passed3day_avg.R")
 
 generate_Rscore_data()
 
@@ -20,7 +20,7 @@ wunderground.key = "6bd64342112a2676"
 generate_weather_data()
 
 weather <- readRDS("data_source/weather_Data.Rds")
-weather_3day <- weather_3day_avg(weather)
+weather_3day <- weather_passed3day_avg(weather)
 
 
 #*******
@@ -33,7 +33,10 @@ print(dim(test))
 #[1] 53729    10
 test = readRDS("data_source/Weather_Data.Rds")
 print(dim(test))
-#[1] 834   5
+#[1] 1097    5
 test = readRDS("data_source/weather_historyData.Rds")
 print(dim(test))
-#[1]   2 834
+#[1]   2 1097
+test = readRDS("data_source/weather_passed3day_avg.Rds")
+print(dim(test))
+#[1] 1094    5
