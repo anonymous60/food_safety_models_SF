@@ -1,6 +1,7 @@
 weather_passed3day_avg <- function(weather){
 ## This function take the weather data for each date, 
-## and returns the data frame of passed three days average 
+## and returns the data frame of passed three days average
+  require("zoo")
   weather <- as.data.frame(weather)
   nrows <- nrow(weather)
   weather <- weather[order(weather$Date, decreasing = TRUE),]
