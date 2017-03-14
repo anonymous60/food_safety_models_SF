@@ -9,11 +9,6 @@
 #' @param LastTrainDate An string of "YYYY-MM-DD" that indicates the split of training data and test data.
 #' The taining data set is up till(include) to this date. The default is "2015-12-31" if not indicated
 #' @return A list of 5:
-#' bestlam (best lambda for the Lasso), roc(a list containing True Positive rate matrix and 
-#' False Positive rate matrix, and probability threshold), lasso.coef(non-zero coefficients of the best model 
-#' chosen from cross-validation), the glm_out (the output glm model), and the testResults 
-#' (results of testing the model on test data set).
-#' List of 5
 #' $ bestlam    : Best lambda for the Lasso
 #' $ roc        : List of 3: TruePosRate(True Positive rate matrix) and FalsePosRate(False Positive rate matrix),
 #'                and Threshold (probability threshold to determing weather the prediction to be 1-critical or 0-non critical)
