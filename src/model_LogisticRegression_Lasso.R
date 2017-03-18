@@ -1,4 +1,4 @@
-# 2017-03-13 Logistic Regression w/ Lasso fit
+# 2017-03-13 Logistic Regression w/ the Lasso
 #'
 # -------------------------- Logistic Regression with the Lasso -------------------------- #
 #' 
@@ -14,10 +14,11 @@
 #'                and Threshold (probability threshold to determing weather the prediction to be 1-critical or 0-non critical)
 #' $ lasso.coef : coefficients of the best model chosen from cross-validation
 #' $ glm_out    : The glmnet object of output model
-#' $ testResults: List of 7: results of testing the model on test data set
-#'                Y : matrix of inspection_IDs and original labels  
-#'                probabilities : output vector of probabilities from glm model with the Lasso.
-#'                predictions : output vector of predictions from glm model with the Lasso.
+#' $ predictions: List of 5: The prediction results of the model on test data set
+#'                scoresTable: The data frome containing "business_name", "business_id", "inspection_id", 
+#'                             "original_critical"(original labels of critical or non-critical), 
+#'                             "scores"(probabilities output from the model), 
+#'                             "predictions" (binary output from the classifier)
 #'                confusionTable  : The confusion table computed from predictions and original labels
 #'                CorrectPercent  : The Percentage of the correct preditions
 #'                ErrorPercent    : The miss classification rate
@@ -32,27 +33,29 @@
 #' # Using the default settings to 
 #' # build Logistic Regression model with the Lasso as model selection method,
 #' # Get coefficients and output model:
-#' output = glm_Lasso ( )
+#' output = glm_Lasso_fit ( )
 #' print(output$bestlam)
 #' print(output$lasso.coef)
 #' plot(output$glm_out)
 #' #
-#' # Print the top 10 high risk inspection_IDs amoung test data set
-#' # and their probabilities to be identified as high-risk
-#' probs = as.data.frame(cbind(output$testResults$Y[,1], output$testResults$probabilities))
-#' names(probs) = c("Insp_ID","Probability")
-#' ordered = probs[order(probs[,2], decreasing = TRUE), ]
-#' print(head(ordered,10))
+#' # Print the top 10 businesses (names and business IDs) that most likely have critical 
+#' # safety issue according to the Logistic Regression(w/ Lasso) Model's prediction
+#' stable = output$predictions$scoresTable
+#' print(head(businesses_ordered_by_scores(stable),10))
+#' #
+#' # View scores of restruarnts that are predicted to be at critical risk versus
+#' # restaurants that are predicted to be at non-critical risk in a box plot
+#' plot_scores_vs_critical(stable)
 #' #
 #' # Print the confusion table
-#' c = output$testResults$confusionTable
+#' c = output$predictions$confusionTable
 #' print(c)
 #' #
 #' # True Positive rate.
-#' print(output$testResults$TruePositiveRate)
+#' print(output$predictions$TruePositiveRate)
 #' #
 #' # Miss Classification rate
-#' print(output$testResults$ErrorPercent)
+#' print(output$predictions$ErrorPercent)
 #' #
 #' # Make ROC curve evaluation, and mark the probability threshold in red:
 #' FPR = output$roc$FalsePosRate
@@ -64,7 +67,7 @@
 #' # Example 2
 #' # Specify the number of fold for cross-validation,
 #' # and date to split the training data and test data
-#' output = glm_Lasso(5, "2015-12-01")
+#' output = glm_Lasso_fit(5, "2015-12-01")
 #' #
 #' # Make ROC curve evaluation, and mark the probability threshold in red:
 #' FPR = output$roc$FalsePosRate
@@ -79,8 +82,16 @@
 #' 
 #' @export
 
-glm_Lasso <- function (K = 10, LastTrainDate = "2015-12-31"){
+glm_Lasso_fit_fit() <- function (K = 10, LastTrainDate = "2015-12-31"){
   # Columns choosing from ABT
+  C0 <- c("business_name", "business_id", 
+          "inspection_id", "inspection_date","critical_found",
+          "maxtemp_F", "meanwindspdm", "maxhumidity", 
+          "complaint", "followup", "newownerconst",#"first_inspection", 
+          "prior_inspections", "prior_violations", 
+          "prior_complaints", "prior_followups", "prior_highrisk_viols",  
+          "prior_highrisk_ratio", "prior_critical_found", "prior_noncritical_found", 
+          "days_since_first_insp", "days_since_last_insp","burgsPast90d","burgsPastWeek")
   C1 <- c("inspection_id", "inspection_date","critical_found",
           "maxtemp_F", "meanwindspdm", "maxhumidity", 
           "complaint", "followup", "newownerconst",#"first_inspection", 
@@ -88,11 +99,15 @@ glm_Lasso <- function (K = 10, LastTrainDate = "2015-12-31"){
           "prior_complaints", "prior_followups", "prior_highrisk_viols",  
           "prior_highrisk_ratio", "prior_critical_found", "prior_noncritical_found", 
           "days_since_first_insp", "days_since_last_insp","burgsPast90d","burgsPastWeek")
-  BigTable2 <- readRDS("data_source/FoodInspectionABTv2.Rds")
-  BigTable2 <- na.omit(FoodInsp1[,C1])
+  #BigTable2 <- readRDS("data_source/FoodInspectionABTv2.Rds")
+  #BigTable2 <- na.omit(FoodInsp1[,C1])
   
+  rawTable <- readRDS("data_source/FoodInspectionABTv2.Rds")
+  BigTable2 <- rawTable[,C0]
+  BigTable2<- BigTable2[complete.cases(BigTable2[,C1]),]
+
   # Prepare data for glmnet model:
-  lm.dat <- BigTable2
+  lm.dat <- BigTable2[,C1]
   lm.dat$critical_found <- factor(lm.dat$critical_found)
   lm.dat$complaint <- factor(lm.dat$complaint)
   lm.dat$followup <- factor(lm.dat$followup)
@@ -100,6 +115,7 @@ glm_Lasso <- function (K = 10, LastTrainDate = "2015-12-31"){
   # Divide test data set and training data set by LastTrainDate
   train <- lm.dat[which(lm.dat$inspection_date <= LastTrainDate), ]
   test <- lm.dat[which(lm.dat$inspection_date > LastTrainDate), ]
+  testBusiness <- BigTable2[which(lm.dat$inspection_date > LastTrainDate),c("business_name", "business_id")]
   
   # Create data matrix for glmnet
   trainX <- data.matrix(train[,4:21])
@@ -129,16 +145,12 @@ glm_Lasso <- function (K = 10, LastTrainDate = "2015-12-31"){
     count  = count +1
     # percentage of 1 observations in the validation set,
     p = length(which(testY==1))/length(testY)
-    
     # probability of the model predicting 1 while the true value of the observation is 0, 
     p_01 = sum(1*(lasso.prob>=t & testY==0))/dim(testX)[1] 
-    
     # probability of the model predicting 1 when the true value of the observation is 1, 
     p_11 = sum(1*(lasso.prob>=t & testY==1))/dim(testX)[1]
-    
     # probability of false-positive, 
     p_fp[count] = p_01/(1-p)
-    
     # probability of true-positive, 
     p_tp[count] = p_11/p
     ratio_tp_fp[count] = p_tp[count]/p_fp[count]
@@ -169,6 +181,11 @@ glm_Lasso <- function (K = 10, LastTrainDate = "2015-12-31"){
   # Generate the output coefficients using all of the data:
   glm_out <- glmnet(myX,myY,alpha=1,lambda=grid, family = "binomial")
   lasso.coef <- predict(glm_out,type="coefficients",s=bestlam)
+  
+  # Collect the output
+  rf_out <- as.data.frame(cbind(testBusiness,test$inspection_id,testY,lasso.prob,lasso.pred))
+  colnames(rf_out) <- c("business_name", "business_id", "inspection_id", "original_critical",
+                        "scores", "predictions")
   output <- list()
   output[[1]] <- bestlam
   output[[2]] <- list()
@@ -176,14 +193,14 @@ glm_Lasso <- function (K = 10, LastTrainDate = "2015-12-31"){
   output[[3]] <- lasso.coef
   output[[4]] <- glm_out
   output[[5]] <- list()
-  output[[5]][[1]] <- cbind(test$inspection_id, testY)
-  output[[5]][[2]] <- lasso.prob
-  output[[5]][[3]] <- as.matrix(lasso.pred)
-  output[[5]][[4]] <- confusionTable
-  output[[5]][[5]] <- CorrectPercent
-  output[[5]][[6]] <- ErrorPercent
-  output[[5]][[7]] <- TruePositiveRate
-  output[[5]] <- setNames(output[[5]], c("Y","probabilities","predictions","confusionTable", 
+  output[[5]][[1]] <- rf_out
+  output[[5]][[2]] <- confusionTable
+  output[[5]][[3]] <- CorrectPercent
+  output[[5]][[4]] <- ErrorPercent
+  output[[5]][[5]] <- TruePositiveRate
+  output[[5]] <- setNames(output[[5]], c("scoresTable","confusionTable", 
                                          "CorrectPercent","ErrorPercent","TruePositiveRate"))
-  output <- setNames(output, c("bestlam","roc","lasso.coef","glm_out", "testResults"))
+  output <- setNames(output, c("bestlam","roc","lasso.coef","glm_out", "predictions"))
+  save(output, file = "data_source/logisticRegression_Lasso_output.rda")
+  return(output)
 }
