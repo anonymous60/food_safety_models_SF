@@ -2,7 +2,7 @@
 # Using the wunderground web API to retrieve historical average temperature 
 # for specified dates, download the data into "weather_historyData.Rds"
 #
-# API calls require the Key ID:  6bd64342112a2676
+# API calls require the Key ID:  
 #
 # Notice: the total number of fetches of data vie the API is limited perday by Key ID
 # Perferably only run this function ONCE.

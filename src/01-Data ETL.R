@@ -1,7 +1,6 @@
 #*******
 # 01- Data Extract, Transform, and load(ETL)
 #*******
-workdir = "~/Documents/Stanford/SF_FoodSafety"
 
 
 dir = getwd()
@@ -15,7 +14,7 @@ source("src/weather_passed3day_avg.R")
 
 generate_Rscore_data()
 
-wunderground.key = "6bd64342112a2676"
+wunderground.key = ""
 #download_weather_history_all(wunderground.key)
 generate_weather_data()
 

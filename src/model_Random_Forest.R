@@ -1,34 +1,44 @@
 # 2017-03-14 Random Forest
 #'
-# -------------------------- randomForest_m_train() -------------------------- #
-#' 
+# -------------------------- model_rf_mTry() -------------------------- #
+#' Trains a random forest model
 #' @description Build random forest models with different values for m, use validation set approach to  
 #' compute miss-classification rate, true positive rate and false positive rate for different m values
 #' @param LastTrainDate An string of "YYYY-MM-DD" that indicates the split of training data and test data.
 #' The taining data set is up till(include) to this date. The default value is "2015-12-31" if not indicated
 #' @return A data frame that contains miss-classification rate, true positive rate and false positive rate for different m values
-#' @seealso \code{\link{randomForest_m_plot}}, \code{\link{randomForest_fit}}, 
-#' \code{\link{plot_scores_vs_critical}},  \code{\link{businesses_ordered_by_scores}}
+#' @seealso \code{\link{model_rf_mTry_plot}}, \code{\link{model_rf_fit}}, 
+#' \code{\link{model_plot_scores_vs_critical}},  \code{\link{model_order_businesses_by_score}}
 #' @examples
 #' # Example 
 #' # Specify the LastTrainDate to split the training data and test data
-#' output = randomForest_m_train("2015-12-01")
+#' output = model_rf_mTry("2015-12-01")
 #' # Visualize this output data frame:
-#' # Plot the miss-classification rate, true positive rate and false positive rate against different m values
-#' randomForest_m_plot()
+#' # Plot the miss-classification rate, true positive rate and
+#' # false positive rate against different m values
+#' model_rf_mTry_plot()
 #' @import randomForest randomForest
 #' @export
-#' 
-randomForest_m_train<- function ( LastTrainDate = "2015-12-31"){
+#'
+#' @author
+model_rf_mTry <- function (LastTrainDate = "2015-12-31") {
+  # validate inputs
+  LastTrainDate <- as.Date(LastTrainDate)
+  if (!is.atomic(LastTrainDate) || is.na(LastTrainDate))
+    stop("LastTrainDate = ", LastTrainDate, " is invalid")
+    
+  print("Trains random forest against all possible m values(the mumber of variables randomly sampled as candidates at each split), this may take a while...")
+
   # Columns choosing from ABT
   C1 <- c("inspection_id", "inspection_date","critical_found",
           "maxtemp_F", 
           "complaint", "followup", "newownerconst", 
           "prior_highrisk_viols", "prior_critical_found", 
           "days_since_last_insp","burgsPast90d")
-  rawTable <- readRDS("data_source/FoodInspectionABTv2.Rds")
-  BigTable <- rawTable[,C1]
-  BigTable <- na.omit(BigTablen[,C1])
+  #rawTable <- readRDS("data_source/FoodInspectionABTv2.Rds")
+  #load( "Model_ABT.rda" )
+  BigTable <- Model_ABT[,C1]
+  BigTable <- stats::na.omit(BigTable[,C1])
   
   # Prepare data for glmnet model:
   lm.dat <- BigTable[,C1]
@@ -67,50 +77,52 @@ randomForest_m_train<- function ( LastTrainDate = "2015-12-31"){
     TPR[i] <- ct[2,2]/sum(ct[,2])
     FPR[i] <- ct[2,1]/sum(ct[,1])
   }
-  randomForest_m <- as.data.frame(rbind(MSE, TPR, FPR))
-  rownames(randomForest_m) <- c("MSE","TPR","FPR")
-  colnames(randomForest_m) <- c("m=1","m=2","m=3","m=4","m=5","m=6","m=7","m=8")
-  save(randomForest_m, file = "data_source/randomForest_mTry.rda")
-  return(randomForest_m)
+  Model_randomForest_mTry <- as.data.frame(rbind(MSE, TPR, FPR))
+  rownames(Model_randomForest_mTry) <- c("MSE","TPR","FPR")
+  colnames(Model_randomForest_mTry) <- c("m=1","m=2","m=3","m=4","m=5","m=6","m=7","m=8")
+  save(Model_randomForest_mTry, file = "Model_randomForest_mTry.rda")
+  return(Model_randomForest_mTry)
 }
 
 
-# -------------------------- randomForest_m_plot() -------------------------- #
-#
-#' @description Visualize the output of function randomForest_m_train().
+# -------------------------- model_rf_mTry_plot() -------------------------- #
+#' Plots a random forest model
+#' @description Visualize the output of function model_rf_mTry().
 #' Plot the miss-classification rate, true positive rate and false positive rate for different m values.
 #' The ideal pick of m should yeilds high true positive rate and relatively low false positive rate and low miss-classification rate.
-#' @param Trained A logical variable to indicate if function randomForest_m_train() has been run, the default value is TRUE.
-#' If it's FALSE, the function will call randomForest_m_train() first 
+#' @param trained A logical variable to indicate if function model_rf_mTry() has been run,
+#'                the default value is TRUE.
+#' If it's FALSE, the function will call model_rf_mTry() first 
 #' @return A plot of the data frame
-#' @seealso \code{\link{randomForest_m_train}}, \code{\link{randomForest_fit}}, 
-#' \code{\link{plot_scores_vs_critical}},  \code{\link{businesses_ordered_by_scores}}
+#' @seealso \code{\link{model_rf_mTry}}, \code{\link{model_rf_fit}}, 
+#' \code{\link{model_plot_scores_vs_critical}},  \code{\link{model_order_businesses_by_score}}
 #' @importFrom graphics plot
 #' @importFrom graphics lines
 #' @importFrom graphics legend
 #' @export
 #' 
-randomForest_m_plot <- function (Trained = TRUE){
-  if (Trained == TRUE) {
-    # Trained, then load the randomForest_m data frame
-    rf_m <- load("data_source/randomForest_mTry.rda")
+#' @author
+model_rf_mTry_plot <- function (trained = TRUE) {
+  if (trained == TRUE) {
+    # trained, then load the randomForest_m data frame
+    #rf_m <- load("Model_randomForest_mTry.rda")
   }else{
-    # Un-trained, Run randomForest_m_train using default settings.
-    randomForest_m <- randomForest_m_train()
+    # Un-trained, Run model_rf_mTry using default settings.
+    Model_randomForest_mTry <- model_rf_mTry()
   }
   # Plot the miss-classification rate, true positive rate and false positive rate in one plot
-  plot(as.numeric(randomForest_m[1,]), type = 'b', col = "red",
+  plot(as.numeric(Model_randomForest_mTry[1,]), type = 'b', col = "red",
        ylab = "", xlab = "m",
-       ylim=c(0,1), xlim = c(1,ncol(randomForest_m)))
-  lines(as.numeric(randomForest_m[2,]), type = 'b',col = "blue")
-  lines(as.numeric(randomForest_m[3,]), type = 'b', col = "green")
-  legend('topright', rownames(randomForest_m) , 
+       ylim=c(0,1), xlim = c(1,ncol(Model_randomForest_mTry)))
+  lines(as.numeric(Model_randomForest_mTry[2,]), type = 'b',col = "blue")
+  lines(as.numeric(Model_randomForest_mTry[3,]), type = 'b', col = "green")
+  legend('topright', rownames(Model_randomForest_mTry) , 
          lty=1, col=c('red', 'blue', 'green'), bty='n', cex=0.75)
 }
 
 #
-# -------------------------- randomForest_fit() -------------------------- #
-#' 
+# -------------------------- model_rf_fit() -------------------------- #
+#' Fits a random forest model
 #' @description Fit the Random Forest model, specify the value of mTry and the LastTrainDate :  
 #' @param mTry Number of variables randomly sampled as candidates at each split. 
 #' The default value is 6.
@@ -129,14 +141,14 @@ randomForest_m_plot <- function (Trained = TRUE){
 #'                ErrorPercent    : The miss classification rate
 #'                TruePositiveRate: The true positive rate computed from the confustion table
 #'
-#' @seealso \code{\link{randomForest_m_train}}, \code{\link{randomForest_m_plot}},
-#' \code{\link{plot_scores_vs_critical}},  \code{\link{businesses_ordered_by_scores}}
+#' @seealso \code{\link{model_rf_mTry}}, \code{\link{model_rf_mTry_plot}},
+#' \code{\link{model_plot_scores_vs_critical}},  \code{\link{model_order_businesses_by_score}}
 #' @examples
 #' # Example 1
 #' #
 #' # Using the default settings to fit the Random Forest model
 #' # 
-#' output = randomForest_fit( )
+#' output = model_rf_fit( )
 #' # Print the variables importance of the fitted model
 #' print(output$variableImportance)
 #' # View the variables importance
@@ -146,12 +158,12 @@ randomForest_m_plot <- function (Trained = TRUE){
 #' # Print the top 10 businesses (names and business IDs) that most likely have critical 
 #' # safety issue according to the Random Forest model's prediction
 #' stable = output$predictions$scoresTable
-#' print(head(businesses_ordered_by_scores(stable),10))
+#' print(head(model_order_businesses_by_score(stable),10))
 #' #
 #' # View the scores of likelyhood in boxplot:
 #' # View the scores of restruarnts that are predicted to be at critical risk versus
 #' # restaurants that are predicted to be at non-critical risk in a box plot
-#' plot_scores_vs_critical(stable)
+#' model_plot_scores_vs_critical(stable)
 #' #
 #' # Print the confusion table
 #' c = output$predictions$confusionTable
@@ -166,7 +178,7 @@ randomForest_m_plot <- function (Trained = TRUE){
 #' #' # Example 2
 #' #
 #' # Choose m=6 , and LastTrainDate= "2015-12-01" to fit the Random Forest model
-#' output2 = randomForest_fit ( 6, "2015-12-01" )
+#' output2 = model_rf_fit ( 6, "2015-12-01" )
 #' # Print the variable importance of the fitted model:
 #' print(output2$variableImportance)
 #' require("randomForest")
@@ -176,7 +188,8 @@ randomForest_m_plot <- function (Trained = TRUE){
 #' @importFrom stats predict
 #' @export
 #' 
-randomForest_fit<- function( mTry = NA, LastTrainDate = "2015-12-31" ){
+#' @author
+model_rf_fit <- function( mTry = NA, LastTrainDate = "2015-12-31" ){
   if (is.na(mTry)){
     #Using defaute mtry settting for Random Forest classification
     mTry = 6
@@ -195,9 +208,10 @@ randomForest_fit<- function( mTry = NA, LastTrainDate = "2015-12-31" ){
           "complaint", "followup", "newownerconst", 
           "prior_highrisk_viols", "prior_critical_found", 
           "days_since_last_insp","burgsPast90d")
-  rawTable <- readRDS("data_source/FoodInspectionABTv2.Rds")
-  BigTable <- rawTable[,C0]
-  BigTable<- BigTable[complete.cases(BigTable[,C1]),]
+  #rawTable <- readRDS("data_source/FoodInspectionABTv2.Rds")
+  #load( "Model_ABT.rda" )
+  BigTable <- Model_ABT[,C0]
+  BigTable<- BigTable[stats::complete.cases(BigTable[,C1]),]
   
   # Prepare data for glmnet model:
   lm.dat <- BigTable[,C1]
@@ -249,54 +263,56 @@ randomForest_fit<- function( mTry = NA, LastTrainDate = "2015-12-31" ){
   rf_out <- as.data.frame(cbind(testBusiness,test$inspection_id,testY,yprob.rf,yhat.rf))
   colnames(rf_out) <- c("business_name", "business_id", "inspection_id", "original_critical",
                         "scores", "predictions")
-  output <- list()
-  output[[1]] <- rf.rel1
-  output[[2]] <- varImp
-  output[[3]] <- list() 
-  output[[3]][[1]] <- rf_out
-  output[[3]][[2]] <- confusionTable
-  output[[3]][[3]] <- CorrectPercent
-  output[[3]][[4]] <- ErrorPercent
-  output[[3]][[5]] <- TruePositiveRate
-  output[[3]] <- setNames(output[[3]], c("scoresTable","confusionTable", 
-                                         "CorrectPercent","ErrorPercent","TruePositiveRate"))
-  output <- setNames(output, c("randomForest_out", "variableImportance","predictions"))
-  save(output, file = "data_source/randomForest_output.rda")
-  return(output)
+  rf_output <- list()
+  rf_output[[1]] <- rf.rel1
+  rf_output[[2]] <- varImp
+  rf_output[[3]] <- list() 
+  rf_output[[3]][[1]] <- rf_out
+  rf_output[[3]][[2]] <- confusionTable
+  rf_output[[3]][[3]] <- CorrectPercent
+  rf_output[[3]][[4]] <- ErrorPercent
+  rf_output[[3]][[5]] <- TruePositiveRate
+  rf_output[[3]] <- stats::setNames(rf_output[[3]],
+                                    c("scoresTable", "confusionTable",
+                                      "CorrectPercent", "ErrorPercent", "TruePositiveRate"))
+  rf_output <- stats::setNames(rf_output,
+                               c("randomForest_out", "variableImportance", "predictions"))
+  save(rf_output, file = "Model_randomForest_output.rda")
+  return(rf_output)
   
 }
 #
-# -------------------------- plot_scores_vs_critical() -------------------------- #
-#
+# -------------------------- model_plot_scores_vs_critical() -------------------------- #
+#' Plots scores vs critical
 #' @description View the scores of likelyhood in boxplot, i.e. scores of restaurants that are predicted to be 
 #' at critical risk versus restaurants that are predicted to be at non-critical risk in a boxplot
-#' @param stable An data frame from the output by runing randomForest_fit() or glm_Lasso_fit()
+#' @param stable An data frame from the output by runing model_rf_fit() or model_cv_glm_lasso()
 #' @return boxplot of the data
-#' @seealso \code{\link{randomForest_m_train}},\code{\link{randomForest_m_plot}},\code{\link{randomForest_fit}}, 
-#' \code{\link{businesses_ordered_by_scores}}
+#' @seealso \code{\link{model_rf_mTry}},\code{\link{model_rf_mTry_plot}},\code{\link{model_rf_fit}}, 
+#' \code{\link{model_order_businesses_by_score}}
 #' @examples
 #' # Example 1
 #' # Get the predicted scores of restaurants by Logistic Regression model with the Lasso
 #' # View scores of restruarnts that are predicted to be at critical risk versus
 #' # restaurants that are predicted to be at non-critical risk in a box plot
-#' output = glm_Lasso_fit( )
+#' library("sffoodinspectr")
+#' output = model_cv_glm_lasso( )
 #' stable = output$predictions$scoresTable
-#' plot_scores_vs_critical(stable)
+#' model_plot_scores_vs_critical(stable)
 #' #
 #' #' # Example 2
 #' # Get the predicted scores of restaurants by Random Forest model
 #' # View scores of restruarnts that are predicted to be at critical risk versus
 #' # restaurants that are predicted to be at non-critical risk in a box plot
-#' output = randomForest_fit( )
+#' output = model_rf_fit( )
 #' stable = output$predictions$scoresTable
-#' plot_scores_vs_critical(stable)
+#' model_plot_scores_vs_critical(stable)
 #' @importFrom graphics boxplot
 #' @importFrom graphics legend
 #' @export
 #' 
-plot_scores_vs_critical <- function (stable){
-  #load("data_source/randomForest_output.rda")
-  #stable = output$predictions$scoresTable
+#' @author
+model_plot_scores_vs_critical <- function (stable){
   if (sum(c("scores","original_critical") %in% colnames(stable)) ==2){
     # View the scores of restaurants that are predicted to be at critical risk Versus
     # restaurants that are predicted to be at non-critical risk
@@ -309,37 +325,39 @@ plot_scores_vs_critical <- function (stable){
   }
 }
 #
-# -------------------------- businesses_ordered_by_scores() -------------------------- #
-#
+# -------------------------- model_order_businesses_by_score() -------------------------- #
+#' Returns businesses ordered by scores
 #' @description Order the restaurant (business names and business IDs) by scores in the decreasing order.
 #' Scores are produced by prediction model, the higher score indicates higher probability 
 #' that the business would have critical safety issue.
-#' @param stable A data frame from the output by runing randomForest_fit() or glm_Lasso_fit()
+#' @param stable A data frame from the output by runing model_rf_fit() or model_cv_glm_lasso()
 #' @return An data frame of businesses order by "scores" and "predictions" 
-#' @seealso \code{\link{randomForest_m_train}}, \code{\link{randomForest_m_plot}},\code{\link{randomForest_fit}},
-#' \code{\link{plot_scores_vs_critical}}
+#' @seealso \code{\link{model_rf_mTry}}, \code{\link{model_rf_mTry_plot}},\code{\link{model_rf_fit}},
+#' \code{\link{model_plot_scores_vs_critical}}
 #' @examples
 #' # Example 1
 #' # Print the top 10 businesses (names and business IDs) that most likely have critical 
-#' # safety issue according to the Logistic Regression(w/ Lasso) Model's prediction
-#' output = glm_Lasso_fit ( )
-#' stable = output$predictions$scoresTable
-#' print(head(businesses_ordered_by_scores(stable),10))
-#' #
-#' #' # Example 2
-#' # Print the top 10 businesses (names and business IDs) that most likely have critical 
 #' # safety issue according to the Random Forest model's prediction
-#' output = randomForest_fit( )
+#' output = model_rf_fit( )
 #' stable = output$predictions$scoresTable
-#' print(head(businesses_ordered_by_scores(stable),10))
+#' print(head(model_order_businesses_by_score(stable),10))
+#' 
+#' # Example 2
+#' # Print the top 10 businesses (names and business IDs) that most likely have critical 
+#' # safety issue according to the Logistic Regression(w/ Lasso) Model's prediction
+#' output = model_cv_glm_lasso ( )
+#' stable = output$predictions$scoresTable
+#' print(head(model_order_businesses_by_score(stable),10))
 #' @importFrom dplyr arrange
+#' @importFrom dplyr desc
+#' @importFrom dplyr collect
 #' @importFrom magrittr %>%
 #' @export
 #' 
-businesses_ordered_by_scores <- function (stable) {
-  # Load the trained random forest result to the environment
-  load("data_source/randomForest_output.rda")
+#' @author
+model_order_businesses_by_score <- function (stable) {
   if (sum(c("business_name","business_id","scores","predictions") %in% colnames(stable)) == 4){
+    predictions <- scores <- NULL
     tmp = stable[,c("business_name","business_id","scores","predictions")]
     # Order the table by scores
     ordered_table <- tmp %>%
